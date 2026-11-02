@@ -4,83 +4,195 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Chameleon</title>
+<meta name="description" content="Chameleon: visibility analysis for architects and planners. View factors, target visibility, viewsheds and view-out pre-assessments on your own computer.">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <style>
-  :root { color-scheme: dark; --bg:#000; --fg:#fff; --mut:#9a9a9a; --line:#2a2a2a; }
+  :root { color-scheme: dark; --bg:#000; --fg:#fff; --mut:#9a9a9a; --line:#232323; --card:#0a0a0a;
+    --glow: linear-gradient(90deg,#F0313F,#FFD21F,#2D6BFF); }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui,sans-serif; display:grid; place-items:center; min-height:100vh; padding:24px; }
-  main { width:100%; max-width:440px; }
-  h1 { font-size:2rem; margin:0 0 4px; letter-spacing:.02em; }
-  p { color:var(--mut); margin:0 0 24px; }
-  .price { font-size:1.25rem; margin-bottom:20px; }
+  html { scroll-behavior: smooth; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 "Futura","Avenir Next",system-ui,sans-serif; }
+  a { color:inherit; }
+  .wrap { max-width:960px; margin:0 auto; padding:0 20px; }
+  nav { position:sticky; top:0; z-index:5; background:rgba(0,0,0,.85); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  nav .wrap { display:flex; align-items:center; justify-content:space-between; height:60px; gap:16px; }
+  nav img { height:38px; margin-left:-8px; display:block; }
+  nav .links { display:flex; gap:20px; font-size:.9rem; }
+  nav .links a { text-decoration:none; color:var(--mut); }
+  nav .links a:hover { color:var(--fg); }
+  section { padding:72px 0; border-bottom:1px solid var(--line); scroll-margin-top:60px; }
+  h1 { font-size:clamp(2rem,5vw,3.2rem); line-height:1.15; margin:0 0 16px; font-weight:600; letter-spacing:-.01em; }
+  h2 { font-size:1.6rem; margin:0 0 8px; font-weight:600; }
+  h3 { font-size:1.05rem; margin:0 0 6px; }
+  p { color:var(--mut); margin:0 0 16px; }
+  .lead { font-size:1.15rem; max-width:620px; }
+  .bar { height:2px; width:64px; background:var(--glow); margin:0 0 24px; border-radius:2px; }
+  .row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  .grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); margin-top:28px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px; }
+  .card p { margin:0; font-size:.93rem; }
+  .plans { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); margin-top:28px; align-items:start; }
+  .plan.pro { border:1px solid transparent; background:linear-gradient(var(--card),var(--card)) padding-box, var(--glow) border-box; }
+  .price { font-size:2rem; font-weight:600; margin:8px 0 2px; }
+  .price small { display:inline; font-size:.9rem; color:var(--mut); font-weight:400; }
+  ul.ticks { list-style:none; padding:0; margin:16px 0 0; font-size:.93rem; color:#cfcfcf; }
+  ul.ticks li { padding:5px 0 5px 22px; position:relative; }
+  ul.ticks li::before { content:""; position:absolute; left:2px; top:13px; width:8px; height:8px; border-radius:50%; background:#2BD46A; }
   label { display:block; font-size:.85rem; color:var(--mut); margin:14px 0 6px; }
-  input { width:100%; padding:12px; background:#0b0b0b; border:1px solid var(--line); border-radius:8px; color:var(--fg); font:inherit; }
-  button { width:100%; margin-top:20px; padding:12px; border:0; border-radius:8px; background:#fff; color:#000; font:inherit; font-weight:600; cursor:pointer; }
-  button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); }
+  input { width:100%; padding:12px; background:#000; border:1px solid var(--line); border-radius:8px; color:var(--fg); font:inherit; }
+  input:focus { outline:none; border-color:#555; }
+  button, .btn { display:inline-block; padding:12px 20px; border:0; border-radius:8px; background:#fff; color:#000; font:inherit; font-weight:600; cursor:pointer; text-decoration:none; text-align:center; }
+  button.ghost, .btn.ghost { background:transparent; color:var(--fg); border:1px solid #3a3a3a; }
+  form button, #keyView button, #manage { width:100%; margin-top:18px; }
   button:disabled { opacity:.5; cursor:wait; }
-  #msg { min-height:1.5em; margin-top:12px; color:#ff8a8a; font-size:.9rem; }
-  small { color:var(--mut); display:block; margin-top:6px; }
-  .key { font:14px/1.6 ui-monospace,Consolas,monospace; word-break:break-all; padding:14px; background:#0b0b0b; border:1px solid var(--line); border-radius:8px; user-select:all; }
+  .msg { min-height:1.5em; margin-top:12px; color:#ff8a8a; font-size:.9rem; }
+  small { color:var(--mut); display:block; margin-top:6px; font-size:.82rem; }
+  .key { font:14px/1.6 ui-monospace,Consolas,monospace; word-break:break-all; padding:14px; background:#000; border:1px solid var(--line); border-radius:8px; user-select:all; margin-top:12px; }
   .warn { color:#ffd479; margin-top:12px; font-size:.9rem; }
-  hr { border:0; border-top:1px solid var(--line); margin:28px 0 0; }
+  .account > * { max-width:440px; }
+  footer { padding:36px 0 48px; color:var(--mut); font-size:.85rem; }
+  footer .wrap { display:flex; flex-wrap:wrap; gap:12px 28px; justify-content:space-between; }
   [hidden] { display:none !important; }
+  @media (max-width:640px) { nav .links a.opt { display:none; } section { padding:52px 0; } }
 </style>
 </head>
 <body>
-<main>
-  <h1>Chameleon</h1>
-  <p>Visibility analysis for architects and planners.</p>
+<nav>
+  <div class="wrap">
+    <a href="#top" aria-label="Chameleon home"><img src="logo.svg" alt="Chameleon"></a>
+    <div class="links">
+      <a href="#features" class="opt">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#about" class="opt">About</a>
+      <a href="#account">My key</a>
+    </div>
+  </div>
+</nav>
 
-  <section id="keyView" hidden>
-    <div class="price" id="keyTitle">Your licence key</div>
-    <div class="key" id="keyText"></div>
-    <button id="copy" type="button">Copy key</button>
-    <div class="warn">Save your key somewhere safe. We don't email it. You can always come back here and sign in with your email to see it again.</div>
-    <small id="keyMeta"></small>
+<main id="top">
+  <section>
+    <div class="wrap">
+      <div class="bar"></div>
+      <h1>See what every point<br>of your design can see.</h1>
+      <p class="lead">Chameleon measures visibility in 3D models: how much sky, green, water or buildings each point sees, which targets are in view, and what an observer can see. Fast, on your own computer.</p>
+      <div class="row">
+        <button id="download" type="button">Download for Windows</button>
+        <a class="btn ghost" href="#pricing">See pricing</a>
+      </div>
+      <div class="msg" id="dlmsg" role="status"></div>
+      <small>Windows 10 or 11. Free to install; create a free account in the app to start.</small>
+    </div>
   </section>
 
-  <section id="buyView">
-    <div class="price">€30 / month <small style="display:inline">incl. VAT. Cancel anytime.</small></div>
-    <form id="f">
-      <label for="email">Email</label>
-      <input id="email" type="email" required autocomplete="email">
-      <label for="code">Referral code (optional)</label>
-      <input id="code" type="text" autocomplete="off" placeholder="e.g. ALICE30">
-      <small>A valid code gives a 30-day free trial, no card needed.</small>
-      <button id="go" type="submit">Continue</button>
-    </form>
-    <hr>
-    <form id="g">
-      <small style="margin-bottom:8px">Already a customer? Get your key again:</small>
-      <input id="email2" type="email" required placeholder="you@example.com" autocomplete="email">
-      <button class="ghost" id="link" type="submit">Email me a sign-in link</button>
-    </form>
+  <section id="features">
+    <div class="wrap">
+      <h2>One tool for visibility studies</h2>
+      <p>Import your model, give each layer a class, pick your points, run.</p>
+      <div class="grid">
+        <div class="card"><h3>View factor</h3><p>The share of the view each class fills, from every vantage point, over the full sphere and the upper hemisphere. Sky view factor included.</p></div>
+        <div class="card"><h3>Target visibility</h3><p>The percentage of chosen targets each spot on your surfaces can see, with weights and distance limits.</p></div>
+        <div class="card"><h3>Viewshed</h3><p>View cones, domes, corridors and skylines: what an observer sees, painted onto the model.</p></div>
+        <div class="card"><h3>Qualifications</h3><p>View-out pre-assessments per room with a report, after EN 17037. A pre-assessment, not a certification.</p></div>
+        <div class="card"><h3>Your models stay yours</h3><p>Everything runs on your computer. Models are never uploaded.</p></div>
+        <div class="card"><h3>Reads your files</h3><p>OBJ, DAE, 3DM and DXF. Results as heatmaps, CSV, JSON and PDF reports.</p></div>
+      </div>
+    </div>
   </section>
-  <hr>
-  <button id="download" type="button">Download for Windows</button>
-  <small>Free to install: up to 1,000 points per model. Sign in with your licence key for the full version.</small>
-  <button class="ghost" id="manage" type="button" hidden>Manage subscription</button>
-  <div id="msg" role="status"></div>
+
+  <section id="pricing">
+    <div class="wrap">
+      <h2>Pricing</h2>
+      <p>Start free. Upgrade when your studies grow.</p>
+      <div class="plans">
+        <div class="card plan">
+          <h3>Free</h3>
+          <div class="price">€0</div>
+          <ul class="ticks">
+            <li>Every analysis</li>
+            <li>Up to 1,000 points per run</li>
+            <li>Reports marked "free version"</li>
+            <li>Free account (email and password)</li>
+          </ul>
+        </div>
+        <div class="card plan pro" id="buyView">
+          <h3>Pro</h3>
+          <div class="price">€30 <small>/ month, incl. VAT</small></div>
+          <ul class="ticks">
+            <li>No point limit</li>
+            <li>Clean reports</li>
+            <li>Use on 2 computers</li>
+            <li>Cancel anytime</li>
+          </ul>
+          <form id="f">
+            <label for="email">Email</label>
+            <input id="email" type="email" required autocomplete="email">
+            <label for="code">Referral code (optional)</label>
+            <input id="code" type="text" autocomplete="off" placeholder="e.g. ALICE30">
+            <small>A valid code gives a 30-day free trial, no card needed.</small>
+            <button id="go" type="submit">Subscribe</button>
+          </form>
+          <div class="msg" id="buymsg" role="status"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="account">
+    <div class="wrap account">
+      <h2>My licence key</h2>
+      <div id="keyView" hidden>
+        <p id="keyTitle">Your licence key</p>
+        <div class="key" id="keyText"></div>
+        <button id="copy" type="button">Copy key</button>
+        <div class="warn">Save your key somewhere safe. We don't email it; sign in here with your email to see it again.</div>
+        <small id="keyMeta"></small>
+      </div>
+      <form id="g">
+        <p>Already a customer? Sign in with your email to see your key and manage your subscription.</p>
+        <input id="email2" type="email" required placeholder="you@example.com" autocomplete="email" aria-label="Email">
+        <button class="ghost" id="link" type="submit">Email me a sign-in link</button>
+      </form>
+      <button class="ghost" id="manage" type="button" hidden>Manage subscription</button>
+      <div class="msg" id="msg" role="status"></div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="wrap">
+      <h2>About</h2>
+      <p class="lead">Chameleon grew out of a research workflow for measuring views in urban and architectural models, validated in a paper submitted to ASCAAD 2026, and rebuilt as a standalone app that is much faster. It is made by Alp Okan Atakan and Eda Özaltay.</p>
+      <p>Questions or feedback: <a href="mailto:atakanalpokan@gmail.com">atakanalpokan@gmail.com</a></p>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Chameleon</span>
+    <span><a href="mailto:atakanalpokan@gmail.com">Contact</a></span>
+  </div>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-  // Fill these two in (the anon key is public by design; never put the service_role key here).
+  // The anon key is public by design; never put the service_role key here.
   const SUPABASE_URL = 'https://yehxdomoyakphgarzdmu.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllaHhkb21veWFrcGhnYXJ6ZG11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM1NzQ5MTUsImV4cCI6MjEwOTE1MDkxNX0.837URMdKC4xInhsy6aOYWdVF1jaKyDpNJyjdG6AjnWg';
   const API = SUPABASE_URL + '/functions/v1/billing';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const $ = (id) => document.getElementById(id);
-  const msg = (t, ok) => { $('msg').textContent = t || ''; $('msg').style.color = ok ? '#8aff9b' : '#ff8a8a'; };
+  const say = (el) => (t, ok) => { $(el).textContent = t || ''; $(el).style.color = ok ? '#8aff9b' : '#ff8a8a'; };
+  const msg = say('msg'), buyMsg = say('buymsg'), dlMsg = say('dlmsg');
   const q = new URLSearchParams(location.search);
   if (q.get('ref')) $('code').value = q.get('ref');
 
   function showKey(d, title) {
-    $('buyView').hidden = true; $('keyView').hidden = false;
+    $('g').hidden = true; $('keyView').hidden = false;
     $('keyTitle').textContent = title;
     $('keyText').textContent = d.key;
     $('keyMeta').textContent = `For ${d.email}. Valid until ${d.expires}.`;
+    $('account').scrollIntoView();
   }
   $('copy').onclick = () => navigator.clipboard.writeText($('keyText').textContent).then(() => msg('Copied.', true));
 
@@ -92,11 +204,11 @@
   }
 
   $('f').addEventListener('submit', async (e) => {
-    e.preventDefault(); $('go').disabled = true; msg('');
+    e.preventDefault(); $('go').disabled = true; buyMsg('');
     try {
       const d = await call('/checkout', { method: 'POST', body: JSON.stringify({ email: $('email').value, code: $('code').value }) });
       location.href = d.url;
-    } catch (err) { msg(err.message); $('go').disabled = false; }
+    } catch (err) { buyMsg(err.message); $('go').disabled = false; }
   });
 
   $('g').addEventListener('submit', async (e) => {
@@ -107,7 +219,7 @@
 
   // Back from Stripe: the webhook may take a few seconds to store the key, so poll.
   async function fromCheckout(id) {
-    $('buyView').hidden = true; msg('Preparing your key…', true);
+    $('account').scrollIntoView(); msg('Preparing your key…', true);
     for (let i = 0; i < 30; i++) {
       try {
         const d = await call('/session-key?session_id=' + encodeURIComponent(id));
@@ -115,15 +227,14 @@
       } catch (err) { return msg(err.message); }
       await new Promise((r) => setTimeout(r, 2000));
     }
-    msg('Still working. Refresh in a minute, or sign in with your email below to fetch your key.');
-    $('buyView').hidden = false;
+    msg('Still working. Refresh in a minute, or sign in with your email to fetch your key.');
   }
 
   // The installer lives in a private bucket: the server hands out a link that works for 5 minutes.
   $('download').onclick = async () => {
-    $('download').disabled = true; msg('');
-    try { location.href = (await call('/download', { method: 'POST' })).url; msg('Your download is starting.', true); }
-    catch (err) { msg(err.message); }
+    $('download').disabled = true; dlMsg('');
+    try { location.href = (await call('/download', { method: 'POST' })).url; dlMsg('Your download is starting.', true); }
+    catch (err) { dlMsg(err.message); }
     $('download').disabled = false;
   };
 
@@ -134,7 +245,7 @@
     const auth = { authorization: 'Bearer ' + data.session.access_token };
     try {
       const d = await call('/my-key', { headers: auth });
-      if (d.none) msg('No licence found for this email yet.');
+      if (d.none) { msg('No licence found for this email yet.'); $('account').scrollIntoView(); }
       else showKey(d, 'Your licence key');
     } catch (err) { msg(err.message); }
     // Cancel, change the card or get invoices in Stripe's own page.
