@@ -55,6 +55,7 @@
       <button class="ghost" id="link" type="submit">Email me a sign-in link</button>
     </form>
   </section>
+  <button class="ghost" id="manage" type="button" hidden>Manage subscription</button>
   <div id="msg" role="status"></div>
 </main>
 
@@ -118,11 +119,19 @@
   async function fromSignIn() {
     const { data } = await sb.auth.getSession();
     if (!data.session) return;
+    const auth = { authorization: 'Bearer ' + data.session.access_token };
     try {
-      const d = await call('/my-key', { headers: { authorization: 'Bearer ' + data.session.access_token } });
+      const d = await call('/my-key', { headers: auth });
       if (d.none) msg('No licence found for this email yet.');
       else showKey(d, 'Your licence key');
     } catch (err) { msg(err.message); }
+    // Cancel, change the card or get invoices in Stripe's own page.
+    $('manage').hidden = false;
+    $('manage').onclick = async () => {
+      $('manage').disabled = true; msg('');
+      try { location.href = (await call('/portal', { method: 'POST', headers: auth })).url; }
+      catch (err) { msg(err.message); $('manage').disabled = false; }
+    };
   }
 
   if (q.get('session_id')) fromCheckout(q.get('session_id')); else fromSignIn();
