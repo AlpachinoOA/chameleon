@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chameleon</title>
+<style>
+  :root { color-scheme: dark; --bg:#000; --fg:#fff; --mut:#9a9a9a; --line:#2a2a2a; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui,sans-serif; display:grid; place-items:center; min-height:100vh; padding:24px; }
+  main { width:100%; max-width:440px; }
+  h1 { font-size:2rem; margin:0 0 4px; letter-spacing:.02em; }
+  p { color:var(--mut); margin:0 0 24px; }
+  .price { font-size:1.25rem; margin-bottom:20px; }
+  label { display:block; font-size:.85rem; color:var(--mut); margin:14px 0 6px; }
+  input { width:100%; padding:12px; background:#0b0b0b; border:1px solid var(--line); border-radius:8px; color:var(--fg); font:inherit; }
+  button { width:100%; margin-top:20px; padding:12px; border:0; border-radius:8px; background:#fff; color:#000; font:inherit; font-weight:600; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); }
+  button:disabled { opacity:.5; cursor:wait; }
+  #msg { min-height:1.5em; margin-top:12px; color:#ff8a8a; font-size:.9rem; }
+  small { color:var(--mut); display:block; margin-top:6px; }
+  .key { font:14px/1.6 ui-monospace,Consolas,monospace; word-break:break-all; padding:14px; background:#0b0b0b; border:1px solid var(--line); border-radius:8px; user-select:all; }
+  .warn { color:#ffd479; margin-top:12px; font-size:.9rem; }
+  hr { border:0; border-top:1px solid var(--line); margin:28px 0 0; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Chameleon</h1>
+  <p>Visibility analysis for architects and planners.</p>
+
+  <section id="keyView" hidden>
+    <div class="price" id="keyTitle">Your licence key</div>
+    <div class="key" id="keyText"></div>
+    <button id="copy" type="button">Copy key</button>
+    <div class="warn">Save your key somewhere safe. We don't email it. You can always come back here and sign in with your email to see it again.</div>
+    <small id="keyMeta"></small>
+  </section>
+
+  <section id="buyView">
+    <div class="price">€30 / month <small style="display:inline">incl. VAT. Cancel anytime.</small></div>
+    <form id="f">
+      <label for="email">Email</label>
+      <input id="email" type="email" required autocomplete="email">
+      <label for="code">Referral code (optional)</label>
+      <input id="code" type="text" autocomplete="off" placeholder="e.g. ALICE30">
+      <small>A valid code gives a 30-day free trial, no card needed.</small>
+      <button id="go" type="submit">Continue</button>
+    </form>
+    <hr>
+    <form id="g">
+      <small style="margin-bottom:8px">Already a customer? Get your key again:</small>
+      <input id="email2" type="email" required placeholder="you@example.com" autocomplete="email">
+      <button class="ghost" id="link" type="submit">Email me a sign-in link</button>
+    </form>
+  </section>
+  <div id="msg" role="status"></div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+  // Fill these two in (the anon key is public by design; never put the service_role key here).
+  const SUPABASE_URL = 'https://yehxdomoyakphgarzdmu.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllaHhkb21veWFrcGhnYXJ6ZG11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM1NzQ5MTUsImV4cCI6MjEwOTE1MDkxNX0.837URMdKC4xInhsy6aOYWdVF1jaKyDpNJyjdG6AjnWg';
+  const API = SUPABASE_URL + '/functions/v1/billing';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const $ = (id) => document.getElementById(id);
+  const msg = (t, ok) => { $('msg').textContent = t || ''; $('msg').style.color = ok ? '#8aff9b' : '#ff8a8a'; };
+  const q = new URLSearchParams(location.search);
+  if (q.get('ref')) $('code').value = q.get('ref');
+
+  function showKey(d, title) {
+    $('buyView').hidden = true; $('keyView').hidden = false;
+    $('keyTitle').textContent = title;
+    $('keyText').textContent = d.key;
+    $('keyMeta').textContent = `For ${d.email}. Valid until ${d.expires}.`;
+  }
+  $('copy').onclick = () => navigator.clipboard.writeText($('keyText').textContent).then(() => msg('Copied.', true));
+
+  async function call(path, opts) {
+    const r = await fetch(API + path, { headers: { 'content-type': 'application/json', ...(opts && opts.headers) }, ...opts });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Something went wrong.');
+    return d;
+  }
+
+  $('f').addEventListener('submit', async (e) => {
+    e.preventDefault(); $('go').disabled = true; msg('');
+    try {
+      const d = await call('/checkout', { method: 'POST', body: JSON.stringify({ email: $('email').value, code: $('code').value }) });
+      location.href = d.url;
+    } catch (err) { msg(err.message); $('go').disabled = false; }
+  });
+
+  $('g').addEventListener('submit', async (e) => {
+    e.preventDefault(); $('link').disabled = true; msg('');
+    const { error } = await sb.auth.signInWithOtp({ email: $('email2').value, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: true } });
+    if (error) { msg(error.message); $('link').disabled = false; } else msg('Check your email for the sign-in link.', true);
+  });
+
+  // Back from Stripe: the webhook may take a few seconds to store the key, so poll.
+  async function fromCheckout(id) {
+    $('buyView').hidden = true; msg('Preparing your key…', true);
+    for (let i = 0; i < 30; i++) {
+      try {
+        const d = await call('/session-key?session_id=' + encodeURIComponent(id));
+        if (!d.pending) { msg(''); history.replaceState(null, '', location.pathname); return showKey(d, 'Thank you! Your licence key'); }
+      } catch (err) { return msg(err.message); }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    msg('Still working. Refresh in a minute, or sign in with your email below to fetch your key.');
+    $('buyView').hidden = false;
+  }
+
+  // Back from the sign-in link.
+  async function fromSignIn() {
+    const { data } = await sb.auth.getSession();
+    if (!data.session) return;
+    try {
+      const d = await call('/my-key', { headers: { authorization: 'Bearer ' + data.session.access_token } });
+      if (d.none) msg('No licence found for this email yet.');
+      else showKey(d, 'Your licence key');
+    } catch (err) { msg(err.message); }
+  }
+
+  if (q.get('session_id')) fromCheckout(q.get('session_id')); else fromSignIn();
+</script>
+</body>
+</html>
