@@ -55,6 +55,9 @@
       <button class="ghost" id="link" type="submit">Email me a sign-in link</button>
     </form>
   </section>
+  <hr>
+  <button id="download" type="button">Download for Windows</button>
+  <small>Free to install: up to 1,000 points per model. Sign in with your licence key for the full version.</small>
   <button class="ghost" id="manage" type="button" hidden>Manage subscription</button>
   <div id="msg" role="status"></div>
 </main>
@@ -114,6 +117,14 @@
     msg('Still working. Refresh in a minute, or sign in with your email below to fetch your key.');
     $('buyView').hidden = false;
   }
+
+  // The installer lives in a private bucket: the server hands out a link that works for 5 minutes.
+  $('download').onclick = async () => {
+    $('download').disabled = true; msg('');
+    try { location.href = (await call('/download', { method: 'POST' })).url; msg('Your download is starting.', true); }
+    catch (err) { msg(err.message); }
+    $('download').disabled = false;
+  };
 
   // Back from the sign-in link.
   async function fromSignIn() {
