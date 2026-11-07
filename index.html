@@ -63,6 +63,7 @@
     <div class="links">
       <a href="#features" class="opt">Features</a>
       <a href="#pricing">Pricing</a>
+      <a href="#consulting" class="opt">Consulting</a>
       <a href="#about" class="opt">About</a>
       <a href="#account">My key</a>
     </div>
@@ -93,6 +94,7 @@
         <div class="card"><h3>Target visibility</h3><p>The percentage of chosen targets each spot on your surfaces can see, with weights and distance limits.</p></div>
         <div class="card"><h3>Viewshed</h3><p>View cones, domes, corridors and skylines: what an observer sees, painted onto the model.</p></div>
         <div class="card"><h3>Qualifications</h3><p>View-out pre-assessments per room with a report, after EN 17037. A pre-assessment, not a certification.</p></div>
+        <div class="card"><h3>Works with your AI assistant</h3><p>Connect Claude (Desktop or Code) through MCP: it can open your model and project, set up classes and points, run the studies and explain the results, while you watch it work in the app.</p></div>
         <div class="card"><h3>Your models stay yours</h3><p>Everything runs on your computer. Models are never uploaded.</p></div>
         <div class="card"><h3>Reads your files</h3><p>OBJ, DAE, 3DM and DXF. Results as heatmaps, CSV, JSON and PDF reports.</p></div>
       </div>
@@ -137,6 +139,45 @@
     </div>
   </section>
 
+  <section id="consulting">
+    <div class="wrap">
+      <h2>Consulting: we run the analysis for you</h2>
+      <p class="lead">No time or no need to learn the tool? Send us your design and we run the visibility study with Chameleon and deliver a clear report. Packages are by the number of design iterations we analyse, so you can compare options before you decide.</p>
+      <div class="plans">
+        <div class="card plan">
+          <h3>Check</h3>
+          <div class="price">1 <small>design iteration</small></div>
+          <ul class="ticks">
+            <li>One analysis type of your choice</li>
+            <li>Report with maps, figures and a short reading of the results</li>
+            <li>Delivered as PDF, CSV and the project file</li>
+          </ul>
+        </div>
+        <div class="card plan pro">
+          <h3>Study</h3>
+          <div class="price">3 to 4 <small>design iterations</small></div>
+          <ul class="ticks">
+            <li>Compare variants side by side</li>
+            <li>One feedback round between iterations</li>
+            <li>A call to walk through the findings and the design decisions they point to</li>
+            <li>Report per iteration plus a comparison summary</li>
+          </ul>
+        </div>
+        <div class="card plan">
+          <h3>Partner</h3>
+          <div class="price">5+ <small>design iterations</small></div>
+          <ul class="ticks">
+            <li>An ongoing study through your design process</li>
+            <li>Several analysis types (view factor, targets, viewshed, view-out)</li>
+            <li>Regular calls and a final report</li>
+          </ul>
+        </div>
+      </div>
+      <p style="margin-top:20px">Each package is scoped with you in a short call (model size, number of analyses, deadline). Your model is used only for your study and is not shared, and we are happy to sign an NDA before you send anything. Results are a pre-assessment, not a certification.</p>
+      <p><a href="mailto:atakanalpokan@gmail.com?cc=eda.oezaltay@uni-weimar.de&subject=Chameleon%20consulting">Are you interested? Get in touch.</a></p>
+    </div>
+  </section>
+
   <section id="account">
     <div class="wrap account">
       <h2>My licence key</h2>
@@ -148,7 +189,14 @@
         <small id="keyMeta"></small>
       </div>
       <form id="g">
-        <p>Already a customer? Sign in with your email to see your key and manage your subscription.</p>
+        <p>Already a customer? Sign in with your email and your Chameleon account password to see your key.</p>
+        <input id="email3" type="email" required placeholder="you@example.com" autocomplete="username" aria-label="Email">
+        <input id="pass3" type="password" required minlength="8" placeholder="Password" autocomplete="current-password" aria-label="Password" style="margin-top:10px">
+        <small>The password is the one you chose in the Chameleon app. If you have none yet, or forgot it, open the app and choose "I don't have an account yet" with your key to set one.</small>
+        <button class="ghost" id="show" type="submit">Show my key</button>
+      </form>
+      <form id="g2" style="margin-top:28px">
+        <p>To manage or cancel your subscription, we send a one-time sign-in link to your email (only the owner of the address can use it; it expires after an hour).</p>
         <input id="email2" type="email" required placeholder="you@example.com" autocomplete="email" aria-label="Email">
         <button class="ghost" id="link" type="submit">Email me a sign-in link</button>
       </form>
@@ -212,6 +260,16 @@
   });
 
   $('g').addEventListener('submit', async (e) => {
+    e.preventDefault(); $('show').disabled = true; msg('');
+    try {
+      const d = await call('/account-key', { method: 'POST', body: JSON.stringify({ email: $('email3').value, password: $('pass3').value }) });
+      if (!d.key) msg('This account has no licence yet. Subscribe above, or use the free version.');
+      else showKey({ key: d.key, email: d.email, expires: d.expires }, 'Your licence key');
+    } catch (err) { msg(err.message); }
+    $('pass3').value = ''; $('show').disabled = false;
+  });
+
+  $('g2').addEventListener('submit', async (e) => {
     e.preventDefault(); $('link').disabled = true; msg('');
     const { error } = await sb.auth.signInWithOtp({ email: $('email2').value, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: true } });
     if (error) { msg(error.message); $('link').disabled = false; } else msg('Check your email for the sign-in link.', true);
