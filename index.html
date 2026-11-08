@@ -95,6 +95,12 @@
   .ctl .seek { flex:1; height:4px; border-radius:4px; background:#2a2a2a; cursor:pointer; position:relative; }
   .ctl .seek i { position:absolute; left:0; top:0; bottom:0; width:0; border-radius:4px; background:var(--glow); }
   .ctl .seek::after { content:""; position:absolute; inset:-10px 0; }
+  .ctl .qm { position:relative; }
+  .ctl .menu { position:absolute; right:0; bottom:44px; min-width:150px; padding:6px; border-radius:10px; background:rgba(10,10,10,.95); border:1px solid #2a2a2a; display:none; }
+  .ctl .menu.open { display:block; }
+  .ctl .menu button { width:100%; height:auto; padding:8px 10px; justify-content:space-between; display:flex; gap:12px; font:.78rem var(--mono); text-align:left; }
+  .ctl .menu button.on { color:#fff; background:rgba(255,255,255,.08); }
+  .ctl .menu button small { margin:0; font-size:.7rem; }
   .ctl input[type=range] { width:72px; padding:0; height:4px; accent-color:#fff; background:transparent; border:0; }
   .grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); margin-top:36px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:26px; }
@@ -355,6 +361,7 @@
       pause: '<svg viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>',
       vol: '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9zM16 8.5a5 5 0 010 7l-1.4-1.4a3 3 0 000-4.2z"/></svg>',
       mute: '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9zM16 9.5l5 5M21 9.5l-5 5" stroke="currentColor" stroke-width="2" fill="none"/></svg>',
+      cog: '<svg viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 000-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 00-1.7-1L15 3.4h-4l-.4 2.6a7.4 7.4 0 00-1.7 1l-2.4-1-2 3.4L6.6 11a7.6 7.6 0 000 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 001.7 1l.4 2.6h4l.4-2.6a7.4 7.4 0 001.7-1l2.4 1 2-3.4zM12 15.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/></svg>',
       full: '<svg viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zM14 4h6v6h-2V6h-4zM4 14h2v4h4v2H4zM18 14h2v6h-6v-2h4z"/></svg>'
     };
     document.getElementById('reelPlay').onclick = function () {
@@ -365,11 +372,27 @@
       var c = document.createElement('div'); c.className = 'ctl';
       c.innerHTML = '<button type="button" data-a="pp" aria-label="Play or pause"></button><span data-a="t">0:00</span><div class="seek" data-a="seek"><i></i></div>' +
         (hasAudio ? '<button type="button" data-a="mute" aria-label="Mute"></button><input data-a="vol" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volume">' : '') +
-        '<button type="button" data-a="fs" aria-label="Full screen"></button>';
+        '<div class="qm"><button type="button" data-a="q" aria-label="Quality"></button><div class="menu" data-a="menu"></div></div><button type="button" data-a="fs" aria-label="Full screen"></button>';
       box.appendChild(c);
       var q = function (a) { return c.querySelector('[data-a=' + a + ']'); };
       var pp = q('pp'), t = q('t'), seek = q('seek'), bar = seek.firstChild;
-      q('fs').innerHTML = ic.full;
+      q('fs').innerHTML = ic.full; q('q').innerHTML = ic.cog;
+      var levels = [['1080p', 'reel-1080.mp4', '13 MB'], ['720p', 'reel.mp4', '4 MB'], ['480p', 'reel-480.mp4', '2 MB']], cur = '720p', menu = q('menu');
+      function drawMenu() {
+        menu.innerHTML = '';
+        levels.forEach(function (l) {
+          var b = document.createElement('button'); b.type = 'button'; b.className = l[0] === cur ? 'on' : '';
+          b.innerHTML = l[0] + '<small>' + l[2] + '</small>';
+          b.onclick = function () {
+            var t0 = v.currentTime, was = !v.paused; cur = l[0]; v.src = l[1];
+            v.onloadedmetadata = function () { v.currentTime = t0; if (was) v.play(); };
+            menu.classList.remove('open'); drawMenu();
+          };
+          menu.appendChild(b);
+        });
+      }
+      drawMenu();
+      q('q').onclick = function () { menu.classList.toggle('open'); };
       var mm = function (s) { return Math.floor(s / 60) + ':' + ('0' + Math.floor(s % 60)).slice(-2); };
       function sync() { pp.innerHTML = v.paused ? ic.play : ic.pause; box.classList.toggle('paused', v.paused); }
       v.onplay = v.onpause = sync; sync();
