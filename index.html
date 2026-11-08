@@ -382,7 +382,7 @@
         menu.innerHTML = '';
         levels.forEach(function (l) {
           var b = document.createElement('button'); b.type = 'button'; b.className = l[0] === cur ? 'on' : '';
-          b.innerHTML = l[0] + '<small>' + l[2] + '</small>';
+          b.textContent = l[0];
           b.onclick = function () {
             var t0 = v.currentTime, was = !v.paused; cur = l[0]; v.src = l[1];
             v.onloadedmetadata = function () { v.currentTime = t0; if (was) v.play(); };
