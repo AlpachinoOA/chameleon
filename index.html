@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Chameleon</title>
 <meta name="description" content="Chameleon: visibility analysis for architects and planners. View factors, target visibility, viewsheds and view-out pre-assessments on your own computer.">
@@ -221,7 +222,7 @@
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
 <script>
   // The anon key is public by design; never put the service_role key here.
   const SUPABASE_URL = 'https://yehxdomoyakphgarzdmu.supabase.co';
@@ -291,7 +292,7 @@
   // The installer lives in a private bucket: the server hands out a link that works for 5 minutes.
   $('download').onclick = async () => {
     $('download').disabled = true; dlMsg('');
-    try { location.href = (await call('/download', { method: 'POST' })).url; dlMsg('Your download is starting.', true); }
+    try { const d = await call('/download', { method: 'POST' }); location.href = d.url; dlMsg('Your download is starting.' + (d.sha256 ? ' SHA-256: ' + d.sha256 : ''), true); }
     catch (err) { dlMsg(err.message); }
     $('download').disabled = false;
   };
