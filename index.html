@@ -58,6 +58,7 @@
   .marq .t { display:inline-flex; gap:36px; padding-right:36px; font:500 .9rem/1 var(--mono); color:var(--mut); }
   
   .marq b { color:var(--yel); font-weight:400; }
+  .marq .q { color:#4a4a47; }
   @keyframes slide { to { transform:translateX(-50%); } }
 
   section { padding:104px 0; border-bottom:1px solid var(--line); scroll-margin-top:0; }
@@ -169,7 +170,7 @@
 
   <div class="marq" aria-hidden="true">
     <div class="t" id="mq">
-      <span>View factor</span><b>&#9679;</b><span>Sky view factor</span><b>&#9679;</b><span>Target visibility</span><b>&#9679;</b><span>Viewshed</span><b>&#9679;</b><span>Skyline</span><b>&#9679;</b><span>View out</span><b>&#9679;</b>
+      <span>View factor</span><b>&#9679;</b><span>Sky view factor</span><b>&#9679;</b><span>Target visibility</span><b>&#9679;</b><span>Viewshed</span><b>&#9679;</b><span>Skyline</span><b>&#9679;</b><span>View out</span><b>&#9679;</b><span class="q">EN 17037 Visibility Report</span><b class="q">&#9679;</b><span class="q">LEED Visibility</span><b class="q">&#9679;</b><span class="q">BREEAM</span><b class="q">&#9679;</b><span class="q">DGNB</span><b class="q">&#9679;</b>
     </div>
   </div>
 
@@ -331,7 +332,10 @@
     // Marquee: duplicate the strip once so it loops without a jump.
     var mq = document.getElementById('mq');
     var tr = document.createElement('div'); tr.className = 'track';
-    mq.parentNode.insertBefore(tr, mq); tr.appendChild(mq); tr.appendChild(mq.cloneNode(true));
+    mq.parentNode.insertBefore(tr, mq); tr.appendChild(mq);
+    // Enough copies that one half of the track is always wider than the screen, so the strip never runs out.
+    var need = Math.max(screen.width, innerWidth, 1200), w = mq.getBoundingClientRect().width || 1, n = Math.ceil(need / w);
+    for (var i = 1; i < n * 2; i++) tr.appendChild(mq.cloneNode(true));
     // Manifesto words light up as it scrolls into view; rows fade in.
     var mf = document.getElementById('mf');
     mf.innerHTML = mf.textContent.split(' ').map(function (w) { return '<span class="w">' + w + '</span>'; }).join(' ');
